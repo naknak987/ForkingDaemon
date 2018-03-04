@@ -1,0 +1,36 @@
+[Unit]
+#This file belongs in /etc/systemd/system/
+Description=App Name daemon service file.
+#The service will wait for  networking and syslog
+After=syslog.target network.target
+#The service requires the following units to be loaded first
+Requires=sendmail.service
+#not necessary but if it conflicts with something - add it here (like chrony and ntp) 
+#Conflicts=sendmail.service exim.service
+
+[Service]
+#The type could be different , depends on many things
+Type=simple
+#not necessary but if it uses pid file - describe it
+PIDFile=/usr/local/bin/appName/work.pid
+#EnvironmentFile=-/etc/sysconfig/network
+#prerequisite (for example it has to remove the pid or check for lock file , etc
+#ExecStartPre=-/usr/libexec/postfix/aliasesdb
+#ExecStartPre=-/usr/libexec/postfix/chroot-update
+#Necessary - it tells the system how to start the process
+ExecStart=/usr/local/bin/appName/booklet/console.sh start
+#if the service supports reload - tell system how to reload it
+#ExecReload=/usr/lib/jvm/jdk1.7.0_07/bin/wso2server.sh restart
+#necessary - tells system how to stop the service
+ExecStop=/usr/local/bin/appName/booklet/console.sh stop
+#Automatic restart by systemd
+Restart=on-failure
+#Time for system to wait before restart. Only works with the ExecReload directive
+#Restartsec=30s
+#Time to wait for the service to start up
+TimeoutStartSec=10s
+#Time to wait for the service to stop
+TimeoutStopSec=10s
+
+[Install]
+WantedBy=multi-user.target
