@@ -17,7 +17,9 @@
 
     class StartCommand extends Command
     {
-        protected $continueFlag = true;
+        protected $continueFlag     = true;
+        protected $pid              = null;
+        protected $pidFileLocation  = __DIR__ . '/../../pid.pid';
 
         protected function configure()
         {
@@ -29,6 +31,9 @@
 
         protected function execute(InputInterface $input, OutputInterface $output)
         {
+            $this->pid = getmypid();
+            $this->savePID();
+
             declare(ticks = 10);
 
             pcntl_signal(SIGHUP, [$this, 'signalHandler']);
@@ -52,21 +57,29 @@
 
             //pcntl_alarm(10);
 
-
-            $pheanstalk = new Pheanstalk('localhost');
-
             for ($i = 1; $i <= 5; ++$i) {
                 $pid = pcntl_fork();
         
                 if (!$pid) {
                     sleep(10+($i*2));
                     $this->logg("In child" . $i);
+                    $this->savePID(getmypid());
                     do {
                         /**
                          * This is the child process loop.
                          */
                         echo "_";
                         $this->logg("{$i} Working on a job.");
+                        $pheanstalk = new Pheanstalk('localhost');
+                        $job = $pheanstalk
+                            ->watch('testtube')
+                            ->ignore('default')
+                            ->reserve();
+
+                        echo $job->getData();
+                        sleep($job->getData());
+
+                        $pheanstalk->delete($job);
                         sleep(5);
                         pcntl_signal_dispatch();
                     } while ($this->continueFlag);
@@ -80,9 +93,15 @@
                  */
                 echo ".";
                 $this->logg("checking for new jobs that need done.");
-                sleep(5);
+                $pheanstalk = new Pheanstalk('localhost');
+                $pheanstalk
+                    ->useTube('testtube')
+                    ->put("5");
+                sleep(2);
                 pcntl_signal_dispatch();
             } while ($this->continueFlag);
+
+            $this->shutdown();
 
             while (pcntl_waitpid(0, $status) != -1) {
                 $status = pcntl_wexitstatus($status);
@@ -109,21 +128,6 @@
         protected function sigusr1Handler($singal)
         {
             $this->logg("Caught SIGUSR1");
-
-            for ($i = 1; $i <= 5; ++$i) {
-                $pid = pcntl_fork();
-        
-                if (!$pid) {
-                    sleep(10+($i*2));
-                    $this->logg("In child" . $i);
-                    exit($i);
-                }
-            }
-        
-            while (pcntl_waitpid(0, $status) != -1) {
-                $status = pcntl_wexitstatus($status);
-                $this->logg("Child {$status} completed");
-            }
         }
 
         protected function sigusr2Handler($singal)
@@ -134,6 +138,29 @@
         protected function sigchldHandler($singal)
         {
             $this->logg("Caught SIGCHLD");
+        }
+
+        protected function savePID($pid = null)
+        {
+            if ($pid === null)
+                $pid = $this->pid;
+            file_put_contents($this->pidFileLocation, $pid . "\r\n", FILE_APPEND);
+            unset($logLocation);
+        }
+
+        protected function shutdown()
+        {
+            if (false != $pidFile = file_get_contents($this->pidFileLocation))
+            {
+                $pids = explode("\r\n", $pidFile);
+                for ($i = count($pids); $i > 0; $i--)
+                {
+                    posix_kill((int)$pids[$i-1], SIGINT);
+                }
+            }
+
+            unlink($this->pidFileLocation);
+
         }
 
         protected function logg($msg)
