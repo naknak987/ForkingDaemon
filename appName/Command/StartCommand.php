@@ -57,6 +57,8 @@
 
             //pcntl_alarm(10);
 
+            $pheanstalk = new Pheanstalk('localhost');
+
             for ($i = 1; $i <= 5; ++$i) {
                 $pid = pcntl_fork();
         
@@ -70,17 +72,19 @@
                          */
                         echo "_";
                         $this->logg("{$i} Working on a job.");
-                        $pheanstalk = new Pheanstalk('localhost');
                         $job = $pheanstalk
                             ->watch('testtube')
                             ->ignore('default')
-                            ->reserve();
+                            ->reserve(2);
+                        
+                        if ($job !== false)
+                        {
+                            echo $job->getData();
+                            sleep($job->getData());
+                            $pheanstalk->delete($job);
+                        }
 
-                        echo $job->getData();
-                        sleep($job->getData());
-
-                        $pheanstalk->delete($job);
-                        sleep(5);
+                        sleep(2);
                         pcntl_signal_dispatch();
                     } while ($this->continueFlag);
                     exit($i);
@@ -91,17 +95,12 @@
                 /**
                  * This is the parent process loop.
                  */
-                echo ".";
-                $this->logg("checking for new jobs that need done.");
-                $pheanstalk = new Pheanstalk('localhost');
-                $pheanstalk
-                    ->useTube('testtube')
-                    ->put("5");
-                sleep(2);
+                sleep(6);
+                $this->jobSeek();
                 pcntl_signal_dispatch();
             } while ($this->continueFlag);
 
-            $this->shutdown();
+            $pheanstalk = null;
 
             while (pcntl_waitpid(0, $status) != -1) {
                 $status = pcntl_wexitstatus($status);
@@ -140,6 +139,28 @@
             $this->logg("Caught SIGCHLD");
         }
 
+        protected function jobSeek()
+        {
+            /**
+             * This function will search for new jobs to add to the queue.
+             * It should only run in the parent loop above. 
+             */
+
+            echo ".";
+            $this->logg("checking for new jobs that need done.");
+            $pheanstalk
+                ->useTube('testtube')
+                ->put("2");
+        }
+
+        protected function executeJob()
+        {
+            /**
+             * This function will pull jobs out of the queue and complete them.
+             * It should only run in the child loop above.
+             */
+        }
+
         protected function savePID($pid = null)
         {
             if ($pid === null)
@@ -150,14 +171,14 @@
 
         protected function shutdown()
         {
-            if (false != $pidFile = file_get_contents($this->pidFileLocation))
+            /* if (false != $pidFile = file_get_contents($this->pidFileLocation))
             {
                 $pids = explode("\r\n", $pidFile);
                 for ($i = count($pids); $i > 0; $i--)
                 {
                     posix_kill((int)$pids[$i-1], SIGINT);
                 }
-            }
+            } */
 
             unlink($this->pidFileLocation);
 
