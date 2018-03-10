@@ -13,7 +13,8 @@
     use PHPMailer\PHPMailer\PHPMailer;
     use PHPMailer\PHPMailer\Exception;
 
-    use Pheanstalk\Pheanstalk;
+    use queueJob;
+    use doJob;
 
     class StartCommand extends Command
     {
@@ -57,8 +58,6 @@
 
             //pcntl_alarm(10);
 
-            $pheanstalk = new Pheanstalk('localhost');
-
             for ($i = 1; $i <= 5; ++$i) {
                 $pid = pcntl_fork();
         
@@ -70,21 +69,9 @@
                         /**
                          * This is the child process loop.
                          */
-                        echo "_";
-                        $this->logg("{$i} Working on a job.");
-                        $job = $pheanstalk
-                            ->watch('testtube')
-                            ->ignore('default')
-                            ->reserve(2);
-                        
-                        if ($job !== false)
-                        {
-                            echo $job->getData();
-                            sleep($job->getData());
-                            $pheanstalk->delete($job);
-                        }
-
-                        sleep(2);
+                        $dowork = new doJob;
+                        $dowork->executeJob();
+                        $dowork = null;
                         pcntl_signal_dispatch();
                     } while ($this->continueFlag);
                     exit($i);
@@ -95,12 +82,11 @@
                 /**
                  * This is the parent process loop.
                  */
-                sleep(6);
-                $this->jobSeek();
+                $seek = new queueJob;
+                $seek->jobSeek();
+                $seek = null;
                 pcntl_signal_dispatch();
             } while ($this->continueFlag);
-
-            $pheanstalk = null;
 
             while (pcntl_waitpid(0, $status) != -1) {
                 $status = pcntl_wexitstatus($status);
@@ -137,28 +123,6 @@
         protected function sigchldHandler($singal)
         {
             $this->logg("Caught SIGCHLD");
-        }
-
-        protected function jobSeek()
-        {
-            /**
-             * This function will search for new jobs to add to the queue.
-             * It should only run in the parent loop above. 
-             */
-
-            echo ".";
-            $this->logg("checking for new jobs that need done.");
-            $pheanstalk
-                ->useTube('testtube')
-                ->put("2");
-        }
-
-        protected function executeJob()
-        {
-            /**
-             * This function will pull jobs out of the queue and complete them.
-             * It should only run in the child loop above.
-             */
         }
 
         protected function savePID($pid = null)
