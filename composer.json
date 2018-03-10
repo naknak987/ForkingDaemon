@@ -6,7 +6,8 @@
     "autoload": {
         "psr-0": {"appName": "./"},
         "classmap": [
-
+            "vendor/queueWorkers/queueJob.php",
+            "vendor/queueWorkers/doJob.php"
         ]
     }
 }
