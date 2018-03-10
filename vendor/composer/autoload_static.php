@@ -57,12 +57,18 @@ class ComposerStaticInit079e1e2db310dcc30798e2cd0a44b2e0
         ),
     );
 
+    public static $classMap = array (
+        'doJob' => __DIR__ . '/..' . '/queueWorkers/doJob.php',
+        'queueJob' => __DIR__ . '/..' . '/queueWorkers/queueJob.php',
+    );
+
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
             $loader->prefixLengthsPsr4 = ComposerStaticInit079e1e2db310dcc30798e2cd0a44b2e0::$prefixLengthsPsr4;
             $loader->prefixDirsPsr4 = ComposerStaticInit079e1e2db310dcc30798e2cd0a44b2e0::$prefixDirsPsr4;
             $loader->prefixesPsr0 = ComposerStaticInit079e1e2db310dcc30798e2cd0a44b2e0::$prefixesPsr0;
+            $loader->classMap = ComposerStaticInit079e1e2db310dcc30798e2cd0a44b2e0::$classMap;
 
         }, null, ClassLoader::class);
     }
