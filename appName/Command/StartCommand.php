@@ -69,6 +69,7 @@
                         /**
                          * This is the child process loop.
                          */
+                        $this->logg("I'm Number {$i} and I do work!");
                         $dowork = new doJob;
                         $dowork->executeJob();
                         $dowork = null;
@@ -82,6 +83,7 @@
                 /**
                  * This is the parent process loop.
                  */
+                $this->logg("I'm handing out work!");
                 $seek = new queueJob;
                 $seek->jobSeek();
                 $seek = null;
