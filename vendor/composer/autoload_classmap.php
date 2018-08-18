@@ -6,6 +6,4 @@ $vendorDir = dirname(dirname(__FILE__));
 $baseDir = dirname($vendorDir);
 
 return array(
-    'doJob' => $vendorDir . '/queueWorkers/doJob.php',
-    'queueJob' => $vendorDir . '/queueWorkers/queueJob.php',
 );
