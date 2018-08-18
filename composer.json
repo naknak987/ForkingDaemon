@@ -4,10 +4,6 @@
         "pda/pheanstalk": "^3.1"
     },
     "autoload": {
-        "psr-0": {"appName": "./"},
-        "classmap": [
-            "vendor/queueWorkers/queueJob.php",
-            "vendor/queueWorkers/doJob.php"
-        ]
+        "psr-0": {"Daemon": "./"}
     }
 }
