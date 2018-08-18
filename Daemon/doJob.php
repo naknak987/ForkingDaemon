@@ -1,42 +1,122 @@
 <?php
+/**
+ * Do Job
+ *
+ * This is the code that will pull jobs from beanstalkd and 
+ * execute the job. The code here depends a lot on the job
+ * what you're trying to accoplish with the daemon.
+ *
+ * PHP Version 7.1.19
+ *
+ * @category Job
+ * @package  ForkingDaemon
+ * @author   Matthew Goheen <matthew.goheen@guardianeldercare.net>
+ * @license  MIT License (see https://www.tldrlegal.com/l/mit)
+ * @link     https://github.com/naknak987/ForkingDaemon
+ */
+namespace Daemon;
 
 use Pheanstalk\Pheanstalk;
 
-class doJob
+/**
+ * Do Job
+ *
+ * This is where you would define methods for the jobs you
+ * want the daemon to be able to handle.
+ *
+ * @category Job
+ * @package  ForkingDaemon
+ * @author   Matthew Goheen <matthew.goheen@guardianeldercare.net>
+ * @license  MIT License (see https://www.tldrlegal.com/l/mit)
+ * @link     https://github.com/naknak987/ForkingDaemon
+ */
+class DoJob
 {
-    protected $q = null;
+    protected $queue = null;
 
+    /**
+     * Constructor
+     *
+     * Create a connection to the beanstalk server.
+     *
+     * @return null
+     */
     public function __construct()
     {
-        $this->q = new Pheanstalk('localhost', '11300', null, true);
+        $this->queue = new Pheanstalk('localhost', '11300', null, true);
     }
-
+    
+    /**
+     * Destructor
+     *
+     * Disconnect from the beanstalk server.
+     *
+     * @return null
+     */
     public function __destruct()
     {
-        $this->q = null;
+        unset($this->queue);
     }
 
+    /**
+     * Execute Job
+     *
+     * Fetch a job from the queue, and route it to the 
+     * correct job handler.
+     *
+     * @return null
+     */
     public function executeJob()
     {
-        /**
-         * This function will pull jobs out of the queue and complete them.
-         * It should only run in the child loop above.
-         */
+        // Fetch a job
         echo "_";
-        $job = $this->q
+        $job = $this->queue
             ->watch('testtube')
             ->ignore('default')
             ->reserve();
-        
-        if ($job !== false)
-        {
-            echo $job->getData();
-            sleep($job->getData());
-        
-            $this->q->delete($job);
+        // Ensure we got a job.
+        if ($job !== false) {
+            // Extract job data.
+            $jobData = json_decode($job->getData());
+            
+            switch ($jobData['JobName']) {
+            case 'Wait':
+                $result = $this->wait($jobData);
+                break;
+            
+            default:
+                // Job definition unknown.
+                break;
+            }
+            
+            if (isset($result) && $result === true) {
+                // Job succeeded. Remove it.
+                $this->queue->delete($job);
+            } else {
+                // Job Failed. Bury it. 
+                $this->queue->bury($job);
+            }
         }
     }
 
+    /**
+     * Example Job
+     *
+     * This performs the actions described in our example job.
+     *
+     * @param array $jobData The data that was put in the job queue.
+     *
+     * @return bool
+     */
+    public function wait($jobData)
+    {
+        try{
+            sleep($jobData['Time']);
+            return true;
+        } catch(Exception $e) {
+            return $e->getMessage();
+        }
+    }
 }
 
 ?>
