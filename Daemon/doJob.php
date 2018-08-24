@@ -14,7 +14,7 @@
  * @license  MIT License (see https://www.tldrlegal.com/l/mit)
  * @link     https://github.com/naknak987/ForkingDaemon
  */
-namespace Daemon;
+namespace Daemon\JobHandler;
 
 use Pheanstalk\Pheanstalk;
 
@@ -79,9 +79,9 @@ class DoJob
             // Extract job data.
             $jobData = json_decode($job->getData());
             
-            switch ($jobData['JobName']) {
+            switch ($jobData->Name) {
             case 'Wait':
-                $result = $this->wait($jobData);
+                $result = $this->wait($jobData->Time);
                 break;
             
             default:
@@ -100,18 +100,18 @@ class DoJob
     }
 
     /**
-     * Example Job
+     * Wait
      *
      * This performs the actions described in our example job.
      *
-     * @param array $jobData The data that was put in the job queue.
+     * @param array $ttw The time to wait.
      *
      * @return bool
      */
-    public function wait($jobData)
+    public function wait($ttw)
     {
         try{
-            sleep($jobData['Time']);
+            sleep($ttw);
             return true;
         } catch(Exception $e) {
             return $e->getMessage();
