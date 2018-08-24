@@ -1,9 +1,29 @@
 {
+    "name": "Daemon",
+    "description": "A forking daemon.",
+    "keywords": ["Forking", "Daemon", "Forking Daemon"],
+    "license": "MIT",
+    "type": "project",
+    "authors": [
+        {
+            "name": "Matthew Goheen",
+            "email": "naknak987@gmail.com"
+        }
+    ],
+    "config": {
+        "preferred-install": "dist",
+        "sort-packages": true,
+        "optimize-autoloader": true
+    },
     "require": {
         "symfony/console": "^3.4",
         "pda/pheanstalk": "^3.1"
     },
     "autoload": {
-        "psr-0": {"Daemon": "./"}
+        "psr-0": {"Daemon": "./"},
+        "classmap": [
+            "Daemon/doJob.php",
+            "Daemon/queueJob.php"
+        ]
     }
 }
