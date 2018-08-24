@@ -14,7 +14,7 @@
  * @license  MIT License (see https://www.tldrlegal.com/l/mit)
  * @link     https://github.com/naknak987/ForkingDaemon
  */
-namespace Daemon;
+namespace Daemon\JobHandler;
 
 use Pheanstalk\Pheanstalk;
 
@@ -78,7 +78,7 @@ class QueueJob
          */
 
         $jobData = array(
-            'JobName' => 'Wait',
+            'Name' => 'Wait',
             'Time' => '3'
         );
 
