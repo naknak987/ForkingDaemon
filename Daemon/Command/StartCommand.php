@@ -23,8 +23,7 @@ use Symfony\Component\Console\Output\OutputInterface as OutputInterface;
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
-use Daemon\QueueJob;
-use Daemon\DoJob;
+use Daemon\JobHandler;
 
 /**
  * Start Command
@@ -110,7 +109,7 @@ class StartCommand extends Command
                      * This is the child process loop.
                      */
                     $this->logg("I'm Number {$i} and I do work!");
-                    $dowork = new doJob;
+                    $dowork = new \Daemon\JobHandler\DoJob();
                     $dowork->executeJob();
                     $dowork = null;
                     pcntl_signal_dispatch();
@@ -124,8 +123,8 @@ class StartCommand extends Command
              * This is the parent process loop.
              */
             $this->logg("I'm handing out work!");
-            $seek = new queueJob;
-            $seek->jobSeek();
+            $seek = new \Daemon\JobHandler\QueueJob();
+            $seek->exampleJob();
             $seek = null;
             pcntl_signal_dispatch();
         } while ($this->continueFlag);
