@@ -31,7 +31,3 @@ I'm the only one who can merge a branch back into master.
 While you have your branch checked out
 *  git fetch
 *  git rebase origin/master
-
-> #### Notes
-> If there is anything I've missed here, or if you have suggestions for improving this workflow, let me know.
-> ~Matthew Goheen
